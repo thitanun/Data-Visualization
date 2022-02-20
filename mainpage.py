@@ -1,13 +1,16 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 import tableManage
 import graphManage
+import graphEngine
 from filterGUI import Ui_FilterWindow
 from marksGUI import Ui_MarkWindow
 import sys
 
+
 class mainTableau(QtWidgets.QMainWindow):
     dictpathfile = {}
     unionpathfile = {}
+    # status_mks = {}
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1325, 680)
@@ -128,6 +131,14 @@ class mainTableau(QtWidgets.QMainWindow):
         self.widget_graph = QtWidgets.QWidget(self.tab2)
         self.widget_graph.setGeometry(QtCore.QRect(0, 10, 781, 361))
         self.widget_graph.setObjectName("widget_graph")
+
+
+        self.show_chart = graphEngine.WebEngineView()
+        self.plot_box = QtWidgets.QVBoxLayout() #set box for plot graph
+        self.plot_box.addWidget(self.show_chart)
+        self.widget_graph.setLayout(self.plot_box)
+
+
         self.button_showdata = QtWidgets.QPushButton(self.tab2)
         self.button_showdata.setGeometry(QtCore.QRect(690, 410, 93, 28))
         font = QtGui.QFont()
@@ -204,13 +215,18 @@ class mainTableau(QtWidgets.QMainWindow):
         self.tabs.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.button_showdata.clicked.connect(graphManage.GraphView)
+
+
         self.FilterPage = QtWidgets.QMainWindow()
-        self.ui2 = Ui_FilterWindow()
-        self.ui2.setupUi(self.FilterPage)
+        self.ui = Ui_FilterWindow()
+        self.ui.setupUi(self.FilterPage)
 
         self.MarkPage = QtWidgets.QMainWindow()
-        self.ui3 = Ui_MarkWindow()
-        self.ui3.setupUi(self.MarkPage)
+        self.ui2 = Ui_MarkWindow()
+        self.ui2.setupUi(self.MarkPage)
+        self.ui2.mark_menu.currentTextChanged.connect(self.get_marks)
+        self.ui2.con_bttn.clicked.connect(self.set_marks)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -242,32 +258,129 @@ class mainTableau(QtWidgets.QMainWindow):
     def eventFilter(self, source, event):
         if (event.type() == QtCore.QEvent.ContextMenu and
             source is self.col_box):
+            self.index = source.currentIndex().row()
+            # print('index', self.index)
             menuCol = QtWidgets.QMenu()
-            # self.fil_act = QtWidgets.QAction("Filter")
-            # self.mrk_act = QtWidgets.QAction("Marks")
-            menuCol.addAction("Filter")
-            menuCol.addAction("Marks")
-            menuCol.triggered.connect(self.show_page)
+            menuCol.addAction('Filter')
+            menuCol.addAction('Marks')
+
+
+            menuCol.triggered.connect(self.actionCol)
             if menuCol.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
-                # print(item.text())
+            return True
 
         if (event.type() == QtCore.QEvent.ContextMenu and
             source is self.row_box):
             menuRow = QtWidgets.QMenu()
             menuRow.addAction('Filter')
             menuRow.addAction('Marks')
+
+            menuRow.triggered.connect(self.actionRow)
             if menuRow.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
-                # print(item.text())
+            return True
         return super(mainTableau, self).eventFilter(source, event)
 
     
-    def show_page(self, action):
+    def actionCol(self, action):
         if action.text() == "Filter":
             self.FilterPage.show()
+
         elif action.text() == "Marks":
             self.MarkPage.show()
+ 
+ 
+    def actionRow(self, action):
+        if action.text() == "Filter":
+            self.FilterPage.show()
+
+        elif action.text() == "Marks":
+            self.MarkPage.show()
+
+
+    def get_marks(self):
+        self.status = self.ui2.mark_menu.currentText()
+        print('status', self.status)
+
+
+    def set_marks(self):
+        if self.col_box.selectedItems():
+            for i in self.col_box.selectedItems():
+                self.old_data = i.text()
+                print('self.old_data', self.old_data)
+
+            bef_list = []
+            for item in range(self.col_box.count()):
+                print(item)
+                bef_list.append(self.col_box.item(item).text())
+                print('bef_list', bef_list)
+
+            now_list = []
+
+            for k in range(len(bef_list)):
+                if self.old_data == bef_list[k]:
+                    if self.status == 'NONE':
+                        data_sp = self.old_data.split('.')
+                        print('data_sp', data_sp)
+                        if len(data_sp) == 1:
+                            now_list.append(data_sp[0])
+                        else:
+                            now_list.append(data_sp[1])
+
+                    else:
+                        data_sp = self.old_data.split('.')
+                        print('data_sp', data_sp)
+                        if len(data_sp) == 1:
+                            now_list.append(self.status + '.' + data_sp[0])
+                        else:
+                            now_list.append(self.status + '.' + data_sp[1])
+                else:
+                    now_list.append(bef_list[k])
+
+            self.col_box.clear()
+            
+            for m in range(len(now_list)):
+                self.col_box.insertItem(m, str(now_list[m]))
+
+
+        elif self.row_box.selectedItems():
+            for i in self.row_box.selectedItems():
+                self.old_data = i.text()
+                print('self.old_data', self.old_data)
+
+            bef_list = []
+            for item in range(self.row_box.count()):
+                print(item)
+                bef_list.append(self.row_box.item(item).text())
+                print('bef_list', bef_list)
+
+            now_list = []
+
+            for k in range(len(bef_list)):
+                if self.old_data == bef_list[k]:
+                    if self.status == 'NONE':
+                        data_sp = self.old_data.split('.')
+                        print('data_sp', data_sp)
+                        if len(data_sp) == 1:
+                            now_list.append(data_sp[0])
+                        else:
+                            now_list.append(data_sp[1])
+
+                    else:
+                        data_sp = self.old_data.split('.')
+                        print('data_sp', data_sp)
+                        if len(data_sp) == 1:
+                            now_list.append(self.status + '.' + data_sp[0])
+                        else:
+                            now_list.append(self.status + '.' + data_sp[1])
+                else:
+                    now_list.append(bef_list[k])
+
+            self.row_box.clear()
+            
+            for m in range(len(now_list)):
+                self.row_box.insertItem(m, str(now_list[m]))
 
 
 

@@ -7,41 +7,40 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QComboBox
 import PyQt5.QtCore as qtc
 import mainpage
 import tableManage
+import graphEngine
 import pandas as pd
 
 class GraphView(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
 
-        # fig = Figure(figsize=(4.5, 4.3))
-        # fig = Figure(figsize=(6, 3))
         fig = Figure(figsize=(8, 3.8))
         self.canvas = FigureCanvas(fig)
         self.ax = self.canvas.figure.add_subplot(111)
 
 
-        self.gr_combo = QComboBox(self)
-        self.gr_combo.setGeometry(300,475,220,22)
-        self.gr_combo.setEditable(False)
-        self.gr_combo.addItem('NONE')
-        self.gr_combo.addItem('BAR chart')
-        self.gr_combo.addItem('PIE chart')
-        self.gr_combo.addItem('LINE chart')
+        # self.gr_combo = QComboBox(self)
+        # self.gr_combo.setGeometry(300,475,220,22)
+        # self.gr_combo.setEditable(False)
+        # self.gr_combo.addItem('NONE')
+        # self.gr_combo.addItem('BAR chart')
+        # self.gr_combo.addItem('PIE chart')
+        # self.gr_combo.addItem('LINE chart')
 
 
-        self.button_showdata = QPushButton('Plot',self)
-        self.button_showdata.move(550,0)
-        self.button_showdata.clicked.connect(self.show_graph)
-        self.button_showdata.setToolTip("Show graph from selected data")
-        self.button_showdata.show()
+        # self.button_showdata = QPushButton('Plot',self)
+        # self.button_showdata.move(550,0)
+        # self.button_showdata.clicked.connect(self.show_graph)
+        # self.button_showdata.setToolTip("Show graph from selected data")
+        # self.button_showdata.show()
 
         self.toolbar = NavigationToolbar(self.canvas, self)
 
-        grlay = QVBoxLayout(self)
-        grlay.addWidget(self.toolbar)
-        grlay.addWidget(self.canvas)
-        grlay.addWidget(self.gr_combo, alignment = qtc.Qt.AlignRight)
-        grlay.addWidget(self.button_showdata, alignment = qtc.Qt.AlignRight)
+        # grlay = QVBoxLayout(self)
+        # grlay.addWidget(self.toolbar)
+        # grlay.addWidget(self.canvas)
+        # grlay.addWidget(self.gr_combo, alignment = qtc.Qt.AlignRight)
+        # grlay.addWidget(self.button_showdata, alignment = qtc.Qt.AlignRight)
 
 
     def show_graph(self):
@@ -168,4 +167,3 @@ class GraphView(QWidget):
         self.canvas.figure.tight_layout()
         self.canvas.draw()
         print("FINISH!")
-
