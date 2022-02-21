@@ -5,13 +5,14 @@ from tracemalloc import stop
 from PyQt5.QtWidgets import QListWidgetItem,QFileDialog,QMainWindow, QApplication, QWidget, QAction, QTableWidget,QTableWidgetItem,QDesktopWidget
 from PyQt5.QtGui import QIcon, QWindow
 from PyQt5.QtCore import pyqtSlot,QSize
+from functools import reduce
 import sys
 import os
 # import fileManage
 import pandas as pd
 # from xlsxwriter import Workbook
 import mainpage
-import marksGUI
+# import markGUI
 
  
 class TableView(QWindow):
@@ -23,7 +24,7 @@ class TableView(QWindow):
     @classmethod
     def importFile(self):
         #path file
-        pathfile = QFileDialog.getOpenFileName(mainpage.mt , 'Open File', os.getenv('HOME'), 'Excel File(*.csv *.xlsx *.xls)')
+        pathfile = QFileDialog.getOpenFileName(mainpage.mainApp , 'Open File', os.getenv('HOME'), 'Excel File(*.csv *.xlsx *.xls)')
 
         if pathfile[0] != '':
             self.list_data(pathfile)
@@ -43,12 +44,12 @@ class TableView(QWindow):
             #select data ,add data in table,add list dimension and measure,list mark ,list filter 
             mainpage.mt.table_box.clear()
             mainpage.mt.table_box.setRowCount(0)
-            self.list_filter()
-            self.list_marks()
+            # self.list_filter()
+            # self.list_marks()
             self.union_show()
             file_read = self.read_data()
             # self.show_data(file_read)
-            self.show_data()
+            # self.show_data()
             self.list_dimen(file_read)
             # self.list_category(file_read)
             self.list_measure(file_read)
@@ -110,8 +111,10 @@ class TableView(QWindow):
         namedata = pathfile[0].split("/") 
         # print(namedata) -> ['D:', 'ttx', 'softdev2', 'cate', 'Tableau', 'Superstore.csv']
         toppic_qlist = QListWidgetItem(namedata[-1])
-        mainpage.mt.dictpathfile[namedata[-1]] = pathfile[0]
-        mainpage.mt.data_box.insertItem(1, toppic_qlist)
+        mainpage.mainTableau.dictpathfile[namedata[-1]] = pathfile[0]
+        mainpage.mt.data_box.insertItem(0, toppic_qlist)
+        # self.dimList.append(toppic_qlist)
+        # self.dimList.append(toppic_qlist[i])
 
 
     @classmethod
@@ -136,96 +139,220 @@ class TableView(QWindow):
                     a += 1   
 
 
-    @classmethod
-    def list_filter(self): #all filter list
-        mainpage.mt.fil_box.clear()
-        data_list = ["Years","Months","Date"]
-        a = 0
-        for i in range(len(data_list)):
-            toppic_filter = QListWidgetItem(data_list[i])
-            # print(toppic_filter) ->
-            # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DDF0>
-            # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DDA8>
-            # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DD60>
-            mainpage.mt.fil_box.insertItem(a, toppic_filter)
-            a += 1       
+    # @classmethod
+    # def list_filter(self): #all filter list
+    #     mainpage.mt.fil_box.clear()
+    #     data_list = ["Years","Months","Date"]
+    #     a = 0
+    #     for i in range(len(data_list)):
+    #         toppic_filter = QListWidgetItem(data_list[i])
+    #         # print(toppic_filter) ->
+    #         # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DDF0>
+    #         # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DDA8>
+    #         # <PyQt5.QtWidgets.QListWidgetItem object at 0x0910DD60>
+    #         mainpage.mt.fil_box.insertItem(a, toppic_filter)
+    #         a += 1       
 
     
+    # @classmethod
+    # def show_data(self): #show data in table
+    #     file_read = self.read_data()
+    #     row_list,column_list = self.row_column_list()
+    #     all_dim_meas = self.dim_meas_rc(file_read,row_list,column_list)
+    #     print(all_dim_meas)
+        
+    #     mark = "None"
+    #     if mark == "None":
+    #         user_list = {}
+    #         #data select        
+    #         for d in all_dim_meas:
+    #             select_data = file_read[d]
+    #             user_list[d] = select_data
+    #         len_file_column = len(user_list)
+
+    #         len_file_row = len(file_read)
+    #         mainpage.mt.table_box.clear()
+    #         mainpage.mt.table_box.setRowCount(0)   
+    #         mainpage.mt.table_box.setColumnCount(len_file_column)
+    #         mainpage.mt.table_box.setRowCount(len_file_row)
+    #         for n, key in enumerate(user_list.keys()): # add item
+    #             for m, item in enumerate(user_list[key]):
+    #                 newitem = QTableWidgetItem(str(item))
+    #                 mainpage.mt.table_box.setItem(m, n, newitem)
+    #         mainpage.mt.table_box.setHorizontalHeaderLabels(all_dim_meas)        
+    #         mainpage.mt.table_box.show()
+    
+
     @classmethod
     def show_data(self): #show data in table
         file_read = self.read_data()
         row_list,column_list = self.row_column_list()
-        all_dim_meas = self.dim_meas_rc(file_read,row_list,column_list)
-        print(all_dim_meas)
+        print("row_list",row_list)
+        print("column_list",column_list)
+        list_dim,list_meas,list_mark = self.dim_meas_rc(file_read,row_list,column_list)
+        print(list_dim)
+        print(list_meas)
+        print(list_mark)
+        if len(list_mark) == 0:
+            frame_merge = self.show_dim_meas(file_read,list_dim,list_meas)
+        else:
+            frame_merge = self.check_mark(file_read,list_dim,list_meas,list_mark)
+        # print(self.self.self.frame_merge)
+        head_col = list(frame_merge.head(0))
+        len_file_column = len(head_col)
+
+        len_file_row = len(frame_merge)
+        mainpage.mt.table_box.clear()
+        mainpage.mt.table_box.setRowCount(0)   
+        mainpage.mt.table_box.setColumnCount(len_file_column)
+        mainpage.mt.table_box.setRowCount(len_file_row)
+        for n, key in enumerate(frame_merge.keys()): # add item
+            for m, item in enumerate(frame_merge[key]):
+                newitem = QTableWidgetItem(str(item))
+                mainpage.mt.table_box.setItem(m, n, newitem)
+        mainpage.mt.table_box.setHorizontalHeaderLabels(head_col)        
+        mainpage.mt.table_box.show()
+    
+    @classmethod
+    def show_dim_meas(self,file_read,list_dim,list_meas):
+        all_dim_meas = list_dim + list_meas
+        frame_merge = file_read[all_dim_meas]
+        return frame_merge
+    
+    @classmethod
+    def check_mark(self,file_read,list_dim,list_meas,list_mark):
+        frame_mark_list = []
         
-        mark = "None"
-        if mark == "None":
-            user_list = {}
-            #data select        
-            for d in all_dim_meas:
-                select_data = file_read[d]
-                user_list[d] = select_data
-            len_file_column = len(user_list)
+        if "NONE" in list_mark:
+            for s_mark in range(len(list_mark)):
+                # print(s_mark)
+                upper_mark = list_mark[s_mark].upper()
+                # print(upper_mark)
+                data_none = {}
+                if upper_mark == "NONE":
+                    new_meas = []   
+                    new_meas.append(list_meas[s_mark])
+            all_dim_measc = list_dim + new_meas
+            # print(all_dim_measc)
+            select_data = file_read[all_dim_measc]
+            frame_merge = select_data
+            # print(select_data)
+            # frame_mark_list.append(select_data)
 
-            len_file_row = len(file_read)
-            mainpage.mt.table_box.clear()
-            mainpage.mt.table_box.setRowCount(0)   
-            mainpage.mt.table_box.setColumnCount(len_file_column)
-            mainpage.mt.table_box.setRowCount(len_file_row)
-            for n, key in enumerate(user_list.keys()): # add item
-                for m, item in enumerate(user_list[key]):
-                    newitem = QTableWidgetItem(str(item))
-                    mainpage.mt.table_box.setItem(m, n, newitem)
-            mainpage.mt.table_box.setHorizontalHeaderLabels(all_dim_meas)        
-            mainpage.mt.table_box.show()
+        else:
+            group_data = file_read.groupby(list_dim,as_index=False)
+            for s_mark in range(len(list_mark)):#mark data
+                # print(s_mark)
+                upper_mark = list_mark[s_mark].upper()
+                # print(upper_mark) 
+                if  upper_mark == 'MEAN':
+                    data_s_mark = group_data[list_meas[s_mark]].mean()
+                if upper_mark == 'MAX':
+                    data_s_mark = group_data[list_meas[s_mark]].max()
+                if upper_mark == 'MIN':
+                    data_s_mark = group_data[list_meas[s_mark]].min()
+                if upper_mark == 'COUNT':
+                    data_s_mark = group_data[list_meas[s_mark]].count()
+                if upper_mark == 'SUM':
+                    data_s_mark = group_data[list_meas[s_mark]].sum()
+                if upper_mark == 'MEDIAN':
+                    data_s_mark = group_data[list_meas[s_mark]].median()
+                frame_mark_list.append(data_s_mark)
 
+        if len(frame_mark_list) >= 1:
+            frame_merge = reduce(lambda left, right: pd.merge(left,right), frame_mark_list)
+
+        return frame_merge
+
+    # @classmethod
+    # def dim_meas_rc(self,file_read,row_list,column_list):
+    #     dim_list,meas_list = self.dim_meas_list(file_read)
+    #     data_dim = []
+    #     data_meas = []
+    #     for i in row_list:
+    #         if i in dim_list:
+    #             data_dim.append(i)
+    #         elif i in meas_list:
+    #             data_meas.append(i)
+    #     for i in column_list:
+    #         if i in dim_list:
+    #             data_dim.append(i)
+    #         elif i in meas_list:
+    #             data_meas.append(i)
+        
+    #     all_dim_meas = []
+    #     for i in data_dim:
+    #         all_dim_meas.append(i)
+    #     for i in data_meas:
+    #         all_dim_meas.append(i)
+
+    #     return all_dim_meas
+    
     @classmethod
     def dim_meas_rc(self,file_read,row_list,column_list):
-        dim_list,meas_list = self.dim_meas_list(file_read)
-        data_dim = []
-        data_meas = []
-        for i in row_list:
-            if i in dim_list:
-                data_dim.append(i)
-            elif i in meas_list:
-                data_meas.append(i)
-        for i in column_list:
-            if i in dim_list:
-                data_dim.append(i)
-            elif i in meas_list:
-                data_meas.append(i)
-        
-        all_dim_meas = []
-        for i in data_dim:
-            all_dim_meas.append(i)
-        for i in data_meas:
-            all_dim_meas.append(i)
+        dimension,measure = self.dim_meas_list(file_read)
+        list_dim = []
+        list_meas = []
+        list_mark = []
 
-        return all_dim_meas
+        for namerow in row_list:
+            list_namerow = namerow.split(".")
+            if len(list_namerow) > 1:
+                if list_namerow[-1] in dimension:
+                    list_dim.append(list_namerow[-1])
+                    list_mark.append(list_namerow[0])
+                if list_namerow[-1] in measure:
+                    list_meas.append(list_namerow[-1])
+                    list_mark.append(list_namerow[0])
+            else:
+                if list_namerow[0] in dimension:
+                    list_dim.append(list_namerow[0])
+                if list_namerow[0] in measure:
+                    list_meas.append(list_namerow[0])
+                    list_mark.append("NONE")
+                
+        for namecolumn in column_list:
+            list_namecolumn = namecolumn.split(".")
+            if len(list_namecolumn) > 1:
+                if list_namecolumn[-1] in dimension:
+                    list_dim.append(list_namecolumn[-1])
+                    list_mark.append(list_namecolumn[0])
+                if list_namecolumn[-1] in measure:
+                    list_meas.append(list_namecolumn[-1])
+                    list_mark.append(list_namecolumn[0])
+            else:
+                if list_namecolumn[0] in dimension:
+                    list_dim.append(list_namecolumn[0])
+                if list_namecolumn[0] in measure:
+                    list_meas.append(list_namecolumn[0])
+                    list_mark.append("NONE")
+        
+        return list_dim,list_meas,list_mark
+
     
     @classmethod
     def dim_meas_list(self,file_read):
 
-        list_toppic = list(file_read.head(0)) 
+        # list_toppic = list(file_read.head(0)) 
 
         dim_list = []
         meas_list = []
-        # for i in range(mainpage.mt.meas_box.count()):
-        #     meas_list.append(mainpage.mt.meas_box.item(i).text())
-        for k_data in range(len(list_toppic)):
-            check_toppic = list(file_read[list_toppic[k_data]]) 
-            check_list = all(isinstance(item, (int,float)) for item in check_toppic)
-            if check_list == True:
-                k_data_upper = list_toppic[k_data].upper()
-                if "ID" in k_data_upper or "CODE" in k_data_upper: 
-                    dim_list.append(list_toppic[k_data])
-                else:
-                    meas_list.append(list_toppic[k_data])
-            else:
-                dim_list.append(list_toppic[k_data])
+        for i in range(mainpage.mt.meas_box.count()):
+            meas_list.append(mainpage.mt.meas_box.item(i).text())
+        # for k_data in range(len(list_toppic)):
+        #     check_toppic = list(file_read[list_toppic[k_data]]) 
+        #     check_list = all(isinstance(item, (int,float)) for item in check_toppic)
+        #     if check_list == True:
+        #         k_data_upper = list_toppic[k_data].upper()
+        #         if "ID" in k_data_upper or "CODE" in k_data_upper: 
+        #             dim_list.append(list_toppic[k_data])
+        #         else:
+        #             meas_list.append(list_toppic[k_data])
+        #     else:
+        #         dim_list.append(list_toppic[k_data])
                 
-        # for i in range(mainpage.mt.dim_box.count()):
-        #     dim_list.append(mainpage.mt.dim_box.item(i).text())        
+        for i in range(mainpage.mt.dim_box.count()):
+            dim_list.append(mainpage.mt.dim_box.item(i).text())        
         
 
         return dim_list,meas_list
@@ -234,17 +361,16 @@ class TableView(QWindow):
 
     @classmethod
     def row_column_list(self): #select dimention
-
+        
         row_list = []
         for i in range(mainpage.mt.row_box.count()):
             row_list.append(mainpage.mt.row_box.item(i).text())
-
+        print("row_list",row_list)
         column_list = []
-        for i in range(mainpage.mt.col_box.count()):
-            column_list.append(mainpage.mt.col_box.item(i).text())
-
+        for a in range(mainpage.mt.col_box.count()):
+            column_list.append(mainpage.mt.col_box.item(a).text())
+        print("column_list",column_list)
         return row_list,column_list
-
 
     @classmethod
     def dim_select(self): #select dimention
@@ -337,15 +463,15 @@ class TableView(QWindow):
     #     path_union =  absolute_path + "\\" + name_csv 
     #     mainpage.mt.unionpathfile[name_csv] = path_union
          
-    @classmethod
-    def list_marks(self): #all filter list
-        mainpage.mt.cat_box.clear()
-        data_list = ["mean","mid","max","min","sum","count"]
-        a = 0
-        for i in range(len(data_list)):
-            toppic_filter = QListWidgetItem(data_list[i])
-            mainpage.mt.cat_box.insertItem(a, toppic_filter)
-            a += 1       
+    # @classmethod
+    # def list_marks(self): #all filter list
+    #     mainpage.mt.cat_box.clear()
+    #     data_list = ["mean","mid","max","min","sum","count"]
+    #     a = 0
+    #     for i in range(len(data_list)):
+    #         toppic_filter = QListWidgetItem(data_list[i])
+    #         mainpage.mt.cat_box.insertItem(a, toppic_filter)
+    #         a += 1       
 
 
     @classmethod
@@ -376,7 +502,7 @@ class TableView(QWindow):
         data_mark = mainpage.mt.cat_box.selectedItems()
 
         data_s_mark = self.marks_check(data_mark,file_read,select_toppic_dim,select_toppic_meas)#get data mark
-        self.marks_add(data_s_mark) #add data mark in table
+        self.marks_addtable(data_s_mark) #add data mark in table
 
         return data_s_mark
     
@@ -412,7 +538,7 @@ class TableView(QWindow):
             
 
     @classmethod
-    def marks_add(self,data_s_mark):
+    def marks_addtable(self,data_s_mark):
         frame_data = pd.DataFrame.from_dict(data_s_mark)
         # frame_data_tran = frame_data.transpose()
         # col_name = list(frame_data.head(0))

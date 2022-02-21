@@ -42,8 +42,8 @@ class mainTableau(QtWidgets.QMainWindow):
         self.dim_box.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.dim_box.setDragEnabled(True)
         # self.dim_box.setAcceptDrops(False)
-        self.dim_box.setAcceptDrops(True)
-        self.dim_box.clicked.connect(tableManage.TableView.dim_select)
+        self.dim_box.setAcceptDrops(False)
+        # self.dim_box.clicked.connect(tableManage.TableView.dim_select)
         # self.dim_box.setDefaultDropAction(QtCore.Qt.MoveAction)
 
         self.meas_label = QtWidgets.QLabel(self.centralwidget)
@@ -56,10 +56,10 @@ class mainTableau(QtWidgets.QMainWindow):
         self.meas_box = QtWidgets.QListWidget(self.centralwidget)
         self.meas_box.setGeometry(QtCore.QRect(10, 440, 211, 181))
         self.meas_box.setObjectName("meas_box")
-        self.meas_box.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-        self.meas_box.clicked.connect(tableManage.TableView.measure_select)
+        # self.meas_box.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        # self.meas_box.clicked.connect(tableManage.TableView.measure_select)
         self.meas_box.setDragEnabled(True)
-        self.meas_box.setAcceptDrops(True)
+        self.meas_box.setAcceptDrops(False)
         # self.meas_box.setDefaultDropAction(QtCore.Qt.MoveAction)
 
         self.uni_label = QtWidgets.QLabel(self.centralwidget)
@@ -103,6 +103,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.col_box.installEventFilter(self)
         self.col_box.setViewMode(QtWidgets.QListWidget.IconMode)
         self.col_box.setDefaultDropAction(QtCore.Qt.MoveAction)
+        # self.col_box.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
 
         self.row_box = QtWidgets.QListWidget(self.centralwidget)
         self.row_box.setGeometry(QtCore.QRect(590, 90, 621, 21))
@@ -153,12 +154,16 @@ class mainTableau(QtWidgets.QMainWindow):
         self.gr_combo.addItem("")
         self.gr_combo.addItem("")
         self.tabs.addTab(self.tab2, "")
+
         self.del_col = QtWidgets.QPushButton(self.centralwidget)
         self.del_col.setGeometry(QtCore.QRect(1220, 30, 61, 28))
         self.del_col.setObjectName("del_col")
+        self.del_col.clicked.connect(self.delete_column)
+
         self.del_row = QtWidgets.QPushButton(self.centralwidget)
         self.del_row.setGeometry(QtCore.QRect(1220, 90, 61, 28))
         self.del_row.setObjectName("del_row")
+        self.del_row.clicked.connect(self.delete_row)
 
         self.fil_label = QtWidgets.QLabel(self.centralwidget)
         self.fil_label.setGeometry(QtCore.QRect(250, 190, 55, 16))
@@ -226,7 +231,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.ui2 = Ui_MarkWindow()
         self.ui2.setupUi(self.MarkPage)
         self.ui2.mark_menu.currentTextChanged.connect(self.get_marks)
-        self.ui2.con_bttn.clicked.connect(self.set_marks)
+        
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -301,20 +306,20 @@ class mainTableau(QtWidgets.QMainWindow):
 
     def get_marks(self):
         self.status = self.ui2.mark_menu.currentText()
-        print('status', self.status)
+        # print('status', self.status)
 
 
     def set_marks(self):
         if self.col_box.selectedItems():
             for i in self.col_box.selectedItems():
                 self.old_data = i.text()
-                print('self.old_data', self.old_data)
+                # print('self.old_data', self.old_data)
 
             bef_list = []
             for item in range(self.col_box.count()):
                 print(item)
                 bef_list.append(self.col_box.item(item).text())
-                print('bef_list', bef_list)
+                # print('bef_list', bef_list)
 
             now_list = []
 
@@ -347,13 +352,13 @@ class mainTableau(QtWidgets.QMainWindow):
         elif self.row_box.selectedItems():
             for i in self.row_box.selectedItems():
                 self.old_data = i.text()
-                print('self.old_data', self.old_data)
+                # print('self.old_data', self.old_data)
 
             bef_list = []
             for item in range(self.row_box.count()):
                 print(item)
                 bef_list.append(self.row_box.item(item).text())
-                print('bef_list', bef_list)
+                # print('bef_list', bef_list)
 
             now_list = []
 
@@ -361,7 +366,7 @@ class mainTableau(QtWidgets.QMainWindow):
                 if self.old_data == bef_list[k]:
                     if self.status == 'NONE':
                         data_sp = self.old_data.split('.')
-                        print('data_sp', data_sp)
+                        # print('data_sp', data_sp)
                         if len(data_sp) == 1:
                             now_list.append(data_sp[0])
                         else:
@@ -369,7 +374,7 @@ class mainTableau(QtWidgets.QMainWindow):
 
                     else:
                         data_sp = self.old_data.split('.')
-                        print('data_sp', data_sp)
+                        # print('data_sp', data_sp)
                         if len(data_sp) == 1:
                             now_list.append(self.status + '.' + data_sp[0])
                         else:
@@ -381,7 +386,12 @@ class mainTableau(QtWidgets.QMainWindow):
             
             for m in range(len(now_list)):
                 self.row_box.insertItem(m, str(now_list[m]))
-
+    
+    def delete_row(self):
+        self.row_box.clear()
+    
+    def delete_column(self):
+        self.col_box.clear()
 
 
 app = QtWidgets.QApplication(sys.argv)
