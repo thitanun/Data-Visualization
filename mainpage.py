@@ -1,10 +1,13 @@
+from tabnanny import check
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
+# from soupsieve import select
 import tableManage
 import graphManage
 import graphEngine
 from filterGUI import Ui_FilterWindow
 from marksGUI import Ui_MarkWindow
 import sys
+import json
 
 
 class mainTableau(QtWidgets.QMainWindow):
@@ -79,7 +82,7 @@ class mainTableau(QtWidgets.QMainWindow):
         font.setPointSize(9)
         self.uni_button.setFont(font)
         self.uni_button.setObjectName("uni_button")
-        self.uni_button.clicked.connect(tableManage.TableView.marks_set)
+        # self.uni_button.clicked.connect(tableManage.TableView.marks_set)
 
         self.col_label = QtWidgets.QLabel(self.centralwidget)
         self.col_label.setGeometry(QtCore.QRect(510, 30, 71, 16))
@@ -101,6 +104,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.col_box.setDragEnabled(True)
         self.col_box.setAcceptDrops(True)
         self.col_box.installEventFilter(self)
+        self.col_box.itemDoubleClicked.connect(self.col_box.clearSelection)
         self.col_box.setViewMode(QtWidgets.QListWidget.IconMode)
         self.col_box.setDefaultDropAction(QtCore.Qt.MoveAction)
         # self.col_box.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
@@ -111,6 +115,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.row_box.setDragEnabled(True)
         self.row_box.setAcceptDrops(True)
         self.row_box.installEventFilter(self)
+        self.row_box.itemDoubleClicked.connect(self.row_box.clearSelection)
         self.row_box.setViewMode(QtWidgets.QListWidget.IconMode)  
         self.row_box.setDefaultDropAction(QtCore.Qt.MoveAction)
 
@@ -187,7 +192,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.cat_box = QtWidgets.QListWidget(self.centralwidget)
         self.cat_box.setGeometry(QtCore.QRect(250, 360, 231, 101))
         self.cat_box.setObjectName("cat_box")
-        self.cat_box.clicked.connect(tableManage.TableView.marks_set)
+        # self.cat_box.clicked.connect(tableManage.TableView.marks_set)
 
         self.button = QtWidgets.QPushButton(self.centralwidget)
         self.button.setGeometry(QtCore.QRect(320, 480, 93, 28))
@@ -227,6 +232,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.ui = Ui_FilterWindow()
         self.ui.setupUi(self.FilterPage)
 
+
         self.MarkPage = QtWidgets.QMainWindow()
         self.ui2 = Ui_MarkWindow()
         self.ui2.setupUi(self.MarkPage)
@@ -264,41 +270,63 @@ class mainTableau(QtWidgets.QMainWindow):
         if (event.type() == QtCore.QEvent.ContextMenu and
             source is self.col_box):
             self.index = source.currentIndex().row()
-            # print('index', self.index)
-            menuCol = QtWidgets.QMenu()
-            menuCol.addAction('Filter')
-            menuCol.addAction('Marks')
-
-
-            menuCol.triggered.connect(self.actionCol)
-            if menuCol.exec_(event.globalPos()):
+            item_col = self.col_box.item(self.index).text()
+            # if source.itemAt(event.pos()) != None:
+            if item_col in tableManage.TableView.dimList:
+                self.menuCol = QtWidgets.QMenu()
+                self.menuCol.addAction('Filter')
+                self.menuCol.triggered.connect(self.actionCol)
+            elif item_col in tableManage.TableView.measList:
+                self.menuCol = QtWidgets.QMenu()
+                self.menuCol.addAction('Marks')
+                self.menuCol.triggered.connect(self.actionCol)
+            if self.menuCol.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
             return True
+
 
         if (event.type() == QtCore.QEvent.ContextMenu and
             source is self.row_box):
-            menuRow = QtWidgets.QMenu()
-            menuRow.addAction('Filter')
-            menuRow.addAction('Marks')
+            self.index = source.currentIndex().row()
+            item_rox = self.row_box.item(self.index).text()
+            if item_rox in tableManage.TableView.dimList:
+                self.menuRow = QtWidgets.QMenu()
+                self.menuRow.addAction('Filter')
+                self.menuRow.triggered.connect(self.actionRow)
+            elif item_rox in tableManage.TableView.measList:
+                self.menuRow = QtWidgets.QMenu()
+                self.menuRow.addAction('Marks')
+                self.menuRow.triggered.connect(self.actionRow)
 
-            menuRow.triggered.connect(self.actionRow)
-            if menuRow.exec_(event.globalPos()):
+            if self.menuRow.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
-            return True
+            # return True
+        
         return super(mainTableau, self).eventFilter(source, event)
 
     
     def actionCol(self, action):
         if action.text() == "Filter":
             self.FilterPage.show()
+            col_select = str(self.col_box.selectedItems()[0].text())
+            fil_list_data = tableManage.TableView.fil_select(col_select)
+            file_filter_check = tableManage.TableView.list_filter(fil_list_data,col_select)
+            self.insert_filter(fil_list_data,file_filter_check)
+            # print(col_select)
+            # print(fil_list_data)
 
         elif action.text() == "Marks":
             self.MarkPage.show()
- 
- 
+            
     def actionRow(self, action):
         if action.text() == "Filter":
             self.FilterPage.show()
+            row_select = str(self.row_box.selectedItems()[0].text())            
+            fil_list_data = tableManage.TableView.fil_select(row_select)
+            file_filter_check = tableManage.TableView.list_filter(fil_list_data,row_select)
+            self.insert_filter(fil_list_data,file_filter_check)
+            # print(fil_list_data)
+            # print(row_select)
 
         elif action.text() == "Marks":
             self.MarkPage.show()
@@ -310,19 +338,19 @@ class mainTableau(QtWidgets.QMainWindow):
 
 
     def set_marks(self):
+        # if self.col_box.selectedItems() and self.data_c in tableManage.TableView.measList:
         if self.col_box.selectedItems():
+            # print('col box se', str(self.col_box.selectedItems()) )
+            # self.row_box.clearSelection()
             for i in self.col_box.selectedItems():
                 self.old_data = i.text()
                 # print('self.old_data', self.old_data)
-
             bef_list = []
             for item in range(self.col_box.count()):
-                print(item)
+                # print(item)
                 bef_list.append(self.col_box.item(item).text())
                 # print('bef_list', bef_list)
-
             now_list = []
-
             for k in range(len(bef_list)):
                 if self.old_data == bef_list[k]:
                     if self.status == 'NONE':
@@ -332,7 +360,6 @@ class mainTableau(QtWidgets.QMainWindow):
                             now_list.append(data_sp[0])
                         else:
                             now_list.append(data_sp[1])
-
                     else:
                         data_sp = self.old_data.split('.')
                         print('data_sp', data_sp)
@@ -342,26 +369,22 @@ class mainTableau(QtWidgets.QMainWindow):
                             now_list.append(self.status + '.' + data_sp[1])
                 else:
                     now_list.append(bef_list[k])
-
             self.col_box.clear()
-            
             for m in range(len(now_list)):
                 self.col_box.insertItem(m, str(now_list[m]))
-
-
+        # elif self.row_box.selectedItems() and self.data_r in tableManage.TableView.measList:
         elif self.row_box.selectedItems():
+            # print('row box se', str(self.row_box.selectedItems()))
+            # self.col_box.clearSelection()
             for i in self.row_box.selectedItems():
                 self.old_data = i.text()
                 # print('self.old_data', self.old_data)
-
             bef_list = []
             for item in range(self.row_box.count()):
-                print(item)
+                # print(item)
                 bef_list.append(self.row_box.item(item).text())
                 # print('bef_list', bef_list)
-
             now_list = []
-
             for k in range(len(bef_list)):
                 if self.old_data == bef_list[k]:
                     if self.status == 'NONE':
@@ -371,7 +394,6 @@ class mainTableau(QtWidgets.QMainWindow):
                             now_list.append(data_sp[0])
                         else:
                             now_list.append(data_sp[1])
-
                     else:
                         data_sp = self.old_data.split('.')
                         # print('data_sp', data_sp)
@@ -381,9 +403,7 @@ class mainTableau(QtWidgets.QMainWindow):
                             now_list.append(self.status + '.' + data_sp[1])
                 else:
                     now_list.append(bef_list[k])
-
             self.row_box.clear()
-            
             for m in range(len(now_list)):
                 self.row_box.insertItem(m, str(now_list[m]))
     
@@ -392,6 +412,41 @@ class mainTableau(QtWidgets.QMainWindow):
     
     def delete_column(self):
         self.col_box.clear()
+
+    def insert_filter(self,fil_list_data,file_filter_check):
+        # print("insert_filter ",fil_list_data)
+        # print("insert_filter check",file_filter_check)
+        self.ui.fil_data.clear()
+        for a,name_data in enumerate(fil_list_data):
+            toppic_ml = QtWidgets.QListWidgetItem(name_data)
+            if name_data in file_filter_check:
+                toppic_ml.setCheckState(QtCore.Qt.Checked)
+                self.ui.fil_data.insertItem(a,toppic_ml)
+            else:
+                toppic_ml.setCheckState(QtCore.Qt.Unchecked)
+                self.ui.fil_data.insertItem(a,toppic_ml)
+    
+    def confirm_filter(self):
+        read_data,select_topic = tableManage.TableView.list_checkpath_filter()
+        fil_list = []
+        for i in range(self.ui.fil_data.count()):
+            check_i = self.ui.fil_data.item(i)
+            if check_i.checkState():
+                item_i = self.ui.fil_data.item(i).text()
+                fil_list.append(item_i)
+
+        if self.col_box.selectedItems():
+            data_select = str(self.col_box.selectedItems()[0].text())
+
+        elif self.row_box.selectedItems():
+            data_select = str(self.row_box.selectedItems()[0].text())
+
+        filList = fil_list
+        for path in select_topic:
+            read_data[path]["filter"][data_select] = filList
+            with open('filterdata.json', 'w') as file_json:
+                json.dump(read_data, file_json)
+
 
 
 app = QtWidgets.QApplication(sys.argv)
