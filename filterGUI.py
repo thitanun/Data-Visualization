@@ -38,7 +38,7 @@ class Ui_FilterWindow(object):
         self.seall_bttn.setText(_translate("FilterWindow", "Select All"))
         self.deall_bttn.setText(_translate("FilterWindow", "Deselect All"))
         self.confirm_bttn.setText(_translate("FilterWindow", "Confirm"))
-        self.cancle_bttn.setText(_translate("FilterWindow", "Cancle"))
+        self.cancle_bttn.setText(_translate("FilterWindow", "Cancel"))
 
 
     def check_all(self):
