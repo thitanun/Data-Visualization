@@ -7,163 +7,175 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QComboBox
 import PyQt5.QtCore as qtc
 import mainpage
 import tableManage
-import graphEngine
 import pandas as pd
+import altair as alt
 
 class GraphView(QWidget):
-    def __init__(self, parent = None):
-        super().__init__(parent)
+    @classmethod
+    def fill_data(self):
+        data_file = mainpage.mt.data_box.selectedItems()
+        file_read = tableManage.TableView.read_data(data_file)
+        self.row_list,self.column_list = tableManage.TableView.row_column_list()
+        self.list_dim,self.list_meas,self.list_mark,self.list_filter = tableManage.TableView.dim_meas_rc(self.row_list,self.column_list)
+        # print('dim',self.list_dim)
+        # print('fil',self.list_filter)
 
-        fig = Figure(figsize=(8, 3.8))
-        self.canvas = FigureCanvas(fig)
-        self.ax = self.canvas.figure.add_subplot(111)
+        if len(self.list_dim) == 0:
+            return
 
-
-        # self.gr_combo = QComboBox(self)
-        # self.gr_combo.setGeometry(300,475,220,22)
-        # self.gr_combo.setEditable(False)
-        # self.gr_combo.addItem('NONE')
-        # self.gr_combo.addItem('BAR chart')
-        # self.gr_combo.addItem('PIE chart')
-        # self.gr_combo.addItem('LINE chart')
-
-
-        # self.button_showdata = QPushButton('Plot',self)
-        # self.button_showdata.move(550,0)
-        # self.button_showdata.clicked.connect(self.show_graph)
-        # self.button_showdata.setToolTip("Show graph from selected data")
-        # self.button_showdata.show()
-
-        self.toolbar = NavigationToolbar(self.canvas, self)
-
-        # grlay = QVBoxLayout(self)
-        # grlay.addWidget(self.toolbar)
-        # grlay.addWidget(self.canvas)
-        # grlay.addWidget(self.gr_combo, alignment = qtc.Qt.AlignRight)
-        # grlay.addWidget(self.button_showdata, alignment = qtc.Qt.AlignRight)
-
-
-    def show_graph(self):
-        if self.gr_combo.currentText() == 'NONE' :
-            print("You didn't select data")
-
-
-        elif self.gr_combo.currentText() == 'BAR chart' :
-            data_s_mark = tableManage.TableView.marks_set()
-            frame_data = pd.DataFrame.from_dict(data_s_mark)
-            print("bar chart!")
-            print("clear!")
-            data = mainpage.mt.meas_box.selectedItems()
-            select_toppic = []
-            for i in range(len(data)):#measure select
-                select_toppic.append(str(mainpage.mt.meas_box.selectedItems()[i].text()))
-            labels = []
-            u = []
-            row_file_read = len(frame_data)
-            for m in range(row_file_read):#data plot
-                k = ""      
-                for n, key in enumerate(frame_data.keys()):
-                    
-                    if key in select_toppic:
-                        u.append(frame_data[key][m])
-                    else:    
-                        k += (frame_data[key][m])
-                labels.append(k)
-            dataFrame = pd.DataFrame(data=u, index=labels)
-            self.barPlot(dataFrame, "barh")
-            print("data in graph done")
-
-
-        elif self.gr_combo.currentText() == 'PIE chart' :
-            data_s_mark = tableManage.TableView.marks_set()
-            frame_data = pd.DataFrame.from_dict(data_s_mark)
-            print("pie chart!")
-            print("clear!")
-            data = mainpage.mt.meas_box.selectedItems()
-            select_toppic = []
-            print("pass sele")
-            for i in range(len(data)):#measure select
-                select_toppic.append(str(mainpage.mt.meas_box.selectedItems()[i].text()))
-            labels = []
-            u = []
-            row_file_read = len(frame_data)
-            print("pass first for")
-            for m in range(row_file_read):#data plot
-                k = []      
-                for n, key in enumerate(frame_data.keys()):                
-                    if key in select_toppic:
-                        u.append(frame_data[key][m])
-                    else:    
-                        k.append(frame_data[key][m])
-                labels.append(k)
-            x = np.array(u)
-            # dataFrame = pd.DataFrame(data=u, index=labels)
-            self.piePlot(x, labels)
-            print("DONE")
-
-
-        elif self.gr_combo.currentText() == 'LINE chart' :
-            print("line chart!")
-            print("clear!")
-            data_s_mark = tableManage.TableView.marks_set()
-            frame_data = pd.DataFrame.from_dict(data_s_mark)
-            data = mainpage.mt.meas_box.selectedItems()
-            select_toppic = []
-            for i in range(len(data)):#measure select
-                select_toppic.append(str(mainpage.mt.meas_box.selectedItems()[i].text()))
-            labels = []
-            u = []
-            row_file_read = len(frame_data)
-            for m in range(row_file_read):#data plot
-                k = ""      
-                for n, key in enumerate(frame_data.keys()):
-                    
-                    if key in select_toppic:
-                        u.append(frame_data[key][m])
-                    else:    
-                        k += (frame_data[key][m])
-                labels.append(k)
-            # dataFrame = pd.DataFrame(data=u, index=labels)
-            self.linePlot(u, labels)
-            print("data in graph done")
-
-
-    def barPlot(self, _dataframe, typebar):
-        print("bar plot here")
-        self.ax.cla()
-        _dataframe.plot(kind=typebar, ax=self.canvas.figure.gca()) #gca mean get current axis
-        if typebar == "barh":
-            self.canvas.figure.gca().invert_yaxis()
-            
+        if len(self.list_dim) == 1:
+            self.alt_col = [alt.X, alt.Column, alt.Color]
+            self.alt_row = [alt.Y, alt.Row, alt.Color]
         else:
-            self.canvas.figure.gca()
-            print("hi")
+            if self.list_dim[0] in self.column_list:
+                # print(self.list_dim[0])
+                self.alt_col = [alt.Column, alt.X, alt.Color]
+                self.alt_row = [alt.Y, alt.Row, alt.Color]
+            else:
+                self.alt_col = [alt.X, alt.Column, alt.Color]
+                self.alt_row = [alt.Row, alt.Y, alt.Color]
 
-        self.ax.legend()
-        self.canvas.figure.tight_layout()
-        self.canvas.draw()
-        print("FINISH!")
+        if len(self.list_mark) == 0:
+            if len(self.list_meas) == 0:
+                frame_merge = tableManage.TableView.show_dim_meas(file_read,self.list_dim,self.list_meas,self.list_filter)
+        else:
+                frame_merge = tableManage.TableView.check_mark(file_read,self.list_dim,self.list_meas,self.list_mark,self.list_filter)
+            
+        self.frame_data = tableManage.TableView.filter_add(frame_merge)
+
+        self.head_frame = list(self.frame_data.head(0))
+        # print('head', self.head_frame)
+        # print('fm', self.frame_data)
+
+        self.check_type()
+
+    @classmethod
+    def check_type(self):
+        if mainpage.mt.gr_combo.currentText() == 'NONE':
+            print("You didn't choose any type")
+
+        elif mainpage.mt.gr_combo.currentText() == 'BAR chart':
+            self.plot_bar()
+
+        elif mainpage.mt.gr_combo.currentText() == 'PIE chart':
+            self.plot_pie()
+
+        elif mainpage.mt.gr_combo.currentText() == 'LINE chart':
+            self.plot_line()
+
+    @classmethod
+    def plot_bar(self):
+        alt_plot = []
+        show_tooltip = []
+        PLOT = []
+        for dim in self.list_dim:
+            if dim in self.column_list:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+            else:
+                alt_plot.append(self.alt_row[0](f"{dim}"))
+                self.alt_row.pop(0)
+            show_tooltip.append(dim)
+        for meas in self.list_meas:
+            min_bar = 0
+            max_bar = 0
+            if min_bar > self.frame_data[meas].min():
+                min_bar = self.frame_data[meas].min()
+            if max_bar < self.frame_data[meas].max():
+                max_bar = self.frame_data[meas].max()
+
+            plt = alt_plot.copy()
+            if meas in self.column_list:
+                plt.append(self.alt_col[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
+            else:
+                plt.append(self.alt_row[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
+
+            plt.append(alt.Tooltip(show_tooltip + [meas]))
+
+            chart = (alt.Chart(self.frame_data).mark_bar().encode(*plt,)
+                    .resolve_scale(x="independent",y="independent")
+                    .interactive()
+                    .transform_filter(alt.FieldGTPredicate(field=str(meas),gt=-1e10))
+                )
+            PLOT.append(chart)
+
+        if len(self.list_meas) > 0:
+            if self.list_meas[0] in self.column_list:
+                chart = alt.hconcat(*PLOT)
+            else:
+                chart = alt.vconcat(*PLOT)
+            mainpage.mt.show_chart.updateChart(chart) # plot chart
+
+    @classmethod
+    def plot_pie(self):
+        CHART = []
+        for dim in self.list_dim:
+            sub_chart = []
+            BASE = alt.Chart(self.frame_data).mark_arc().encode(color=alt.Color(dim))
+            for meas in self.list_meas:
+                base = BASE.encode(
+                    theta = alt.Theta(meas),
+                    show_tooltip = alt.Tooltip([dim,meas])
+                )
+                sub_chart.append(base)
+            CHART.append(sub_chart)
+
+        if len(self.list_meas) > 0:
+            if self.list_meas[0] in self.column_list:
+                hchart = []
+                for sub_chart in CHART:
+                    hchart.append(alt.hconcat(*sub_chart).resolve_scale(theta="independent",color="independent"))
+                chart = alt.vconcat(*hchart)
+            else:
+                vchart = []
+                for sub_chart in CHART:
+                    vchart.append(alt.vconcat(*sub_chart).resolve_scale(theta="independent",color="independent"))
+                chart = alt.hconcat(*vchart)
+            mainpage.mt.show_chart.updateChart(chart) # plot chart
+
+    @classmethod
+    def plot_line(self):
+        alt_plot = []
+        show_tooltip = []
+        PLOT = []
+        for dim in self.list_dim:
+            if dim in self.column_list:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+                # print(alt_col)
+            else:
+                alt_plot.append(self.alt_row[0](f"{dim}"))
+                self.alt_row.pop(0)
+            show_tooltip.append(dim)
+        for meas in self.list_meas:
+            # data = frame_data
+            min_bar = 0
+            max_bar = 0
+            if min_bar > self.frame_data[meas].min(): 
+                min_bar = self.frame_data[meas].min()
+            if max_bar < self.frame_data[meas].max():
+                max_bar = self.frame_data[meas].max()
+
+            plt = alt_plot.copy()
+            # print('heyy',plt)
+            if meas in self.column_list:
+                plt.append(self.alt_col[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
+            else:
+                plt.append(self.alt_row[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
+
+            plt.append(alt.Tooltip(show_tooltip + [meas]))
+        chart = (alt.Chart(self.frame_data).mark_line().encode(*plt)
+                    .resolve_scale(x="independent",y="independent")
+                    .interactive()
+                ) 
+        PLOT.append(chart)
+
+        if len(self.list_meas) > 0:
+            if self.list_meas[0] in self.column_list:
+                chart = alt.hconcat(*PLOT)
+            else:
+                chart = alt.vconcat(*PLOT)
+            mainpage.mt.show_chart.updateChart(chart) # plot chart
 
 
-    def piePlot(self, datapie, index):
-        print("pie plot here")
-        self.ax.cla()
 
-        self.ax.pie(datapie, labels=index, autopct = '%1.1f%%')
-        self.ax.legend()
-        self.canvas.figure.tight_layout()
-        self.canvas.draw()
-        print("FINISH!")
-
-
-
-
-    def linePlot(self, dataline, index):
-        print("line plot here")
-        self.ax.cla()
-
-        self.ax.plot(dataline, index)
-        self.ax.legend()
-        self.canvas.figure.tight_layout()
-        self.canvas.draw()
-        print("FINISH!")
