@@ -75,15 +75,15 @@ class mainTableau(QtWidgets.QMainWindow):
         self.uni_label.setObjectName("uni_label")
 
         self.uni_box = QtWidgets.QListWidget(self.centralwidget)
-        self.uni_box.setGeometry(QtCore.QRect(250, 160, 231, 111))
+        self.uni_box.setGeometry(QtCore.QRect(250, 160, 231, 135))
         self.uni_box.setObjectName("uni_box")
 
-        self.uni_button = QtWidgets.QPushButton(self.centralwidget)
-        self.uni_button.setGeometry(QtCore.QRect(320, 280, 93, 28))
-        font = QtGui.QFont()
-        font.setPointSize(9)
-        self.uni_button.setFont(font)
-        self.uni_button.setObjectName("uni_button")
+        # self.uni_button = QtWidgets.QPushButton(self.centralwidget)
+        # self.uni_button.setGeometry(QtCore.QRect(320, 280, 93, 28))
+        # font = QtGui.QFont()
+        # font.setPointSize(9)
+        # self.uni_button.setFont(font)
+        # self.uni_button.setObjectName("uni_button")
         # self.uni_button.clicked.connect(tableManage.TableView.marks_set)
 
         self.col_label = QtWidgets.QLabel(self.centralwidget)
@@ -159,7 +159,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.gr_combo = QtWidgets.QComboBox(self.tab2)
         self.gr_combo.setGeometry(QtCore.QRect(690, 380, 91, 21))
         self.gr_combo.setObjectName("gr_combo")
-        self.gr_combo.addItem("")
+        # self.gr_combo.addItem("")
         self.gr_combo.addItem("")
         self.gr_combo.addItem("")
         self.gr_combo.addItem("")
@@ -227,10 +227,10 @@ class mainTableau(QtWidgets.QMainWindow):
         self.impMenu = QtWidgets.QAction(MainWindow)
         self.impMenu.setObjectName("impMenu")
         self.impMenu.triggered.connect(tableManage.TableView.importFile)
-        self.expMenu = QtWidgets.QAction(MainWindow)
-        self.expMenu.setObjectName("expMenu")
+        # self.expMenu = QtWidgets.QAction(MainWindow)
+        # self.expMenu.setObjectName("expMenu")
         self.fileMenu.addAction(self.impMenu)
-        self.fileMenu.addAction(self.expMenu)
+        # self.fileMenu.addAction(self.expMenu)
         self.mainMenu.addAction(self.fileMenu.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -263,15 +263,15 @@ class mainTableau(QtWidgets.QMainWindow):
         self.dim_label.setText(_translate("MainWindow", "Dimensions"))
         self.meas_label.setText(_translate("MainWindow", "Measures"))
         self.uni_label.setText(_translate("MainWindow", "Union File"))
-        self.uni_button.setText(_translate("MainWindow", "Union File"))
+        # self.uni_button.setText(_translate("MainWindow", "Union File"))
         self.col_label.setText(_translate("MainWindow", "Colunms"))
         self.row_label.setText(_translate("MainWindow", "Rows"))
         self.tabs.setTabText(self.tabs.indexOf(self.tab1), _translate("MainWindow", "Data table viewer"))
         self.button_showdata.setText(_translate("MainWindow", "Plot"))
-        self.gr_combo.setItemText(0, _translate("MainWindow", "NONE"))
-        self.gr_combo.setItemText(1, _translate("MainWindow", "BAR chart"))
-        self.gr_combo.setItemText(2, _translate("MainWindow", "PIE chart"))
-        self.gr_combo.setItemText(3, _translate("MainWindow", "LINE chart"))
+        # self.gr_combo.setItemText(0, _translate("MainWindow", "NONE"))
+        self.gr_combo.setItemText(0, _translate("MainWindow", "BAR chart"))
+        self.gr_combo.setItemText(1, _translate("MainWindow", "PIE chart"))
+        self.gr_combo.setItemText(2, _translate("MainWindow", "LINE chart"))
         self.tabs.setTabText(self.tabs.indexOf(self.tab2), _translate("MainWindow", "Data graph viewer"))
         self.del_col.setText(_translate("MainWindow", "Del"))
         self.del_row.setText(_translate("MainWindow", "Del"))
@@ -280,7 +280,7 @@ class mainTableau(QtWidgets.QMainWindow):
         self.button.setText(_translate("MainWindow", "Data List"))
         self.fileMenu.setTitle(_translate("MainWindow", "File"))
         self.impMenu.setText(_translate("MainWindow", "Import"))
-        self.expMenu.setText(_translate("MainWindow", "Export"))
+        # self.expMenu.setText(_translate("MainWindow", "Export"))
 
 
     def eventFilter(self, source, event):
@@ -288,15 +288,36 @@ class mainTableau(QtWidgets.QMainWindow):
             source is self.col_box):
             self.index = source.currentIndex().row()
             item_col = self.col_box.item(self.index).text()
+            # if item_col.find(".") >= 1:
+            #     new_item_col = item_col.split(".")
+            #     print(new_item_col)
+            #     if new_item_col[1] in tableManage.TableView.measList:
+            #         self.menuCol = QtWidgets.QMenu()
+            #         self.menuCol.addAction('Marks')
+            #         self.menuCol.addAction('Filter')
+            #         self.menuCol.addAction('Delete')
+            #         self.menuCol.triggered.connect(self.actionCol)
+            
             if item_col.find(".") >= 1:
                 new_item_col = item_col.split(".")
                 print(new_item_col)
-                if new_item_col[1] in tableManage.TableView.measList:
+                if new_item_col[1] in tableManage.TableView.dimList:
+                    self.menuCol = QtWidgets.QMenu()
+                    self.menuCol.addAction('Filters')
+                    self.menuCol.addAction('Delete')
+                    if "DATE" in new_item_col[1].upper():
+                        self.menuCol.addAction('Year')
+                        # self.menuCol.triggered.connect(self.check_ok)
+                        self.menuCol.addAction('Month')
+                        self.menuCol.addAction('Date')
+                    self.menuCol.triggered.connect(self.actionCol)
+                elif new_item_col[1] in tableManage.TableView.measList:
                     self.menuCol = QtWidgets.QMenu()
                     self.menuCol.addAction('Marks')
                     self.menuCol.addAction('Filter')
                     self.menuCol.addAction('Delete')
                     self.menuCol.triggered.connect(self.actionCol)
+
 
             else:
                 if item_col in tableManage.TableView.dimList:
@@ -320,12 +341,12 @@ class mainTableau(QtWidgets.QMainWindow):
                     print('here')
                     new_item_col = item_col.split("+")
                     self.menuCol = QtWidgets.QMenu()
-                    self.menuCol.addAction('Drill down')
                     self.menuCol.addAction('Filters')
-                    if "DATE" in new_item_col[0].upper():
-                        self.menuCol.addAction('Year')
-                        self.menuCol.addAction('Month')
-                        self.menuCol.addAction('Date')
+                    self.menuCol.addAction('Drill down')
+                    # if "DATE" in new_item_col[0].upper():
+                    #     self.menuCol.addAction('Year')
+                    #     self.menuCol.addAction('Month')
+                    #     self.menuCol.addAction('Date')
                     self.menuCol.addAction('Delete')
                     self.menuCol.triggered.connect(self.actionCol)
 
@@ -339,14 +360,33 @@ class mainTableau(QtWidgets.QMainWindow):
             self.index = source.currentIndex().row()
             item_rox = self.row_box.item(self.index).text()
 
+            # if item_rox.find(".") >= 1:
+            #     new_item_row = item_rox.split(".")
+            #     if new_item_row[1] in tableManage.TableView.measList:
+            #         self.menuRow = QtWidgets.QMenu()
+            #         self.menuRow.addAction('Marks')
+            #         self.menuRow.addAction('Filter')
+            #         self.menuRow.addAction('Delete')
+            #         self.menuRow.triggered.connect(self.actionRow)
             if item_rox.find(".") >= 1:
                 new_item_row = item_rox.split(".")
-                if new_item_row[1] in tableManage.TableView.measList:
+                # print(new_item_row)
+                if new_item_row[1] in tableManage.TableView.dimList:
+                    self.menuRow = QtWidgets.QMenu()
+                    self.menuRow.addAction('Filters')
+                    self.menuRow.addAction('Delete')
+                    if "DATE" in new_item_row[1].upper():
+                        self.menuRow.addAction('Year')
+                        self.menuRow.addAction('Month')
+                        self.menuRow.addAction('Date')
+                    self.menuRow.triggered.connect(self.actionRow)
+                elif new_item_row[1] in tableManage.TableView.measList:
                     self.menuRow = QtWidgets.QMenu()
                     self.menuRow.addAction('Marks')
                     self.menuRow.addAction('Filter')
                     self.menuRow.addAction('Delete')
                     self.menuRow.triggered.connect(self.actionRow)
+
 
             else:
                 if item_rox in tableManage.TableView.dimList:
@@ -370,12 +410,12 @@ class mainTableau(QtWidgets.QMainWindow):
                     print('here')
                     new_item_row = item_rox.split("+")
                     self.menuRow = QtWidgets.QMenu()
-                    self.menuRow.addAction('Drill down')
                     self.menuRow.addAction('Filters')
-                    if "DATE" in new_item_row[0].upper():
-                        self.menuRow.addAction('Year')
-                        self.menuRow.addAction('Month')
-                        self.menuRow.addAction('Date')
+                    self.menuRow.addAction('Drill down')
+                    # if "DATE" in new_item_row[0].upper():
+                    #     self.menuRow.addAction('Year')
+                    #     self.menuRow.addAction('Month')
+                    #     self.menuRow.addAction('Date')
                     self.menuRow.addAction('Delete')
                     self.menuRow.triggered.connect(self.actionRow)
 
@@ -417,6 +457,19 @@ class mainTableau(QtWidgets.QMainWindow):
                 
             return True
         
+        # if (event.type() == QtCore.QEvent.ContextMenu and
+        #     source is self.data_box):
+        #     self.index = source.currentIndex().row()
+        #     item_dim = self.data_box.item(self.index).text()
+        #     self.menudata_box = QtWidgets.QMenu()           
+        #     self.menudata_box.addAction('Delete')
+        #     self.menudata_box.triggered.connect(self.actionDatabox)
+
+        #     if self.menudata_box.exec_(event.globalPos()):
+        #         item = source.itemAt(event.pos())
+                
+        #     return True
+
         if (event.type() == QtCore.QEvent.ContextMenu and
             source is self.data_box):
             self.index = source.currentIndex().row()
@@ -424,6 +477,26 @@ class mainTableau(QtWidgets.QMainWindow):
             self.menudata_box = QtWidgets.QMenu()           
             self.menudata_box.addAction('Delete')
             self.menudata_box.triggered.connect(self.actionDatabox)
+            read_data,select_toppic = tableManage.TableView.list_checkpath_meta()
+            read_fildata,fil_topic = tableManage.TableView.list_checkpath_filter()
+            read_fildatameas,filmeas_topic = tableManage.TableView.path_filtermeas()
+            for path in range(len(read_data.keys())):
+                md5_hash = hashlib.md5()
+                file_md5 = open(select_toppic[0], "rb")
+                file_md5_read = file_md5.read()
+                md5_hash.update(file_md5_read)
+                code_md5 = md5_hash.hexdigest()
+                if select_toppic[0] == fil_topic[0] == filmeas_topic[0]:
+                    if code_md5 in read_data.keys():
+                        del read_data[code_md5]
+                        with open('metadata.json', 'w') as file_json:
+                            json.dump(read_data, file_json)
+                        del read_fildata[code_md5]
+                        with open('filterdata.json', 'w') as filefil_json:
+                            json.dump(read_fildata, filefil_json)
+                        del read_fildatameas[code_md5]
+                        with open('filtermeasure.json', 'w') as filemeas_json:
+                            json.dump(read_fildatameas, filemeas_json)
 
             if self.menudata_box.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
@@ -564,10 +637,11 @@ class mainTableau(QtWidgets.QMainWindow):
             self.fil_box.clear()
             self.drill_box.clear()
 
+
     def actionDim(self, action):
         if action.text() == "Delete":
             self.dim_box.takeItem(self.index)
-            self.drill_box.takeItem(self.index)
+            # self.drill_box.takeItem(self.index)
 
         elif action.text() == "Add":
             self.dim_item = ""
@@ -579,8 +653,11 @@ class mainTableau(QtWidgets.QMainWindow):
             self.dim_item = self.dim_item[:-1]
             # print('dim item2', self.dim_item)
             i = QtWidgets.QListWidgetItem(self.dim_item)
-            self.dim_box.addItem(i)
-            self.dim_box.clearSelection()
+            # self.dim_box.addItem(i)
+            # self.dim_box.clearSelection()
+            tableManage.TableView.list_drilldown(self.dim_item)
+            self.drill_box.addItem(i)
+            self.drill_box.clearSelection()
 
 
 
@@ -787,8 +864,6 @@ class mainTableau(QtWidgets.QMainWindow):
         self.col_box.clear()
 
     def insert_filter(self,fil_list_data,file_filter_check):
-        # print("insert_filter ",fil_list_data)
-        # print("insert_filter check",file_filter_check)
         self.ui.fil_data.clear()
         for a,name_data in enumerate(fil_list_data):
             toppic_ml = QtWidgets.QListWidgetItem(name_data)
@@ -811,27 +886,34 @@ class mainTableau(QtWidgets.QMainWindow):
         elif self.row_box.selectedItems():
             data_select = str(self.row_box.selectedItems()[0].text())
 
-        if data_select in dimension:
-            fil_list_data = tableManage.TableView.fil_select_dim(data_select)
-            for i in range(self.ui.fil_data.count()):
-                check_i = self.ui.fil_data.item(i)
-                if check_i.checkState():
-                    item_i = self.ui.fil_data.item(i).text()
-                    fil_list.append(item_i)
-            for path in select_topic:
-                md5_hash = hashlib.md5()
-                file_md5 = open(path, "rb")
-                file_md5_read = file_md5.read()
-                md5_hash.update(file_md5_read)
-                code_md5 = md5_hash.hexdigest()
-                if fil_list_data == fil_list:
-                    if data_select in read_data[code_md5]["filter"]:
-                        del read_data[code_md5]["filter"][data_select]
-                else:
-                    read_data[code_md5]["filter"][data_select] = fil_list
-                with open('filterdata.json', 'w') as file_json:
-                    json.dump(read_data, file_json)
-            tableManage.TableView.filter_boxadd()
+        fil_boxlist = []
+        for i in range(self.fil_box.count()):
+            fil_boxlist.append(self.fil_box.item(i).text())
+        # if data_select in dimension:
+        fil_list_data = tableManage.TableView.fil_select_dim(data_select)
+        for i in range(self.ui.fil_data.count()):
+            check_i = self.ui.fil_data.item(i)
+            if check_i.checkState():
+                item_i = self.ui.fil_data.item(i).text()
+                fil_list.append(item_i)
+        for path in select_topic:
+            md5_hash = hashlib.md5()
+            file_md5 = open(path, "rb")
+            file_md5_read = file_md5.read()
+            md5_hash.update(file_md5_read)
+            code_md5 = md5_hash.hexdigest()
+            if fil_list_data == fil_list:
+                if data_select in read_data[code_md5]["filter"]:
+                    del read_data[code_md5]["filter"][data_select]
+                    self.fil_box.takeItem(fil_boxlist.index(data_select))
+            else:
+                read_data[code_md5]["filter"][data_select] = fil_list
+                if data_select not in fil_boxlist:
+                    self.fil_box.insertItem(len(fil_boxlist), data_select)
+            with open('filterdata.json', 'w') as file_json:
+                json.dump(read_data, file_json)
+
+        # tableManage.TableView.filter_boxadd()
 
 
 app = QtWidgets.QApplication(sys.argv)

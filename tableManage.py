@@ -31,6 +31,8 @@ class TableView(QWindow):
         if pathfile[0] != '':
             # self.list_data(pathfile)
             self.list_data(pathfile[0])
+            # self.list_dimen(pathfile[0])
+            # self.list_measure(pathfile[0])
 
     
     @classmethod
@@ -43,6 +45,7 @@ class TableView(QWindow):
         if len(data) == 0: #check list select
             mainpage.mt.table_box.clear()
             mainpage.mt.table_box.setRowCount(0)
+            mainpage.mt.table_box.setColumnCount(0)
             mainpage.mt.dim_box.clear()
             mainpage.mt.meas_box.clear()
             mainpage.mt.row_box.clear()
@@ -56,6 +59,7 @@ class TableView(QWindow):
             mainpage.mt.row_box.clear()
             mainpage.mt.col_box.clear()
             mainpage.mt.table_box.setRowCount(0)
+            # self.show_data_open(data)
             for path in select_topic:
                 self.list_data(path)
             self.union_show()
@@ -85,6 +89,51 @@ class TableView(QWindow):
             list_data_box.append(mainpage.mt.data_box.item(i).text())
         if pathfile not in list_data_box:
             mainpage.mt.data_box.insertItem(0, pathfile)
+    
+    @classmethod
+    def path_start(self): #add dimention in list
+        path_all = []
+        with open('metadata.json', 'r') as file_readjson:
+            read_json = file_readjson.read()
+            read_data = json.loads(read_json)
+        path_md5 = list(read_data.keys())
+        mainpage.mt.data_box.clear()
+        for a in range(len(path_md5)): 
+            toppic_ml = QListWidgetItem(read_data[path_md5[a]]['path file'])
+            mainpage.mt.data_box.insertItem(a, toppic_ml)
+            
+
+    
+    # @classmethod
+    # def show_data_open(self,data): #show data in table
+    #     file_read = self.read_data(data)
+    #     dict_file_read = dict(file_read)
+    #     col_name = list(file_read.head(0))
+    #     len_file_column = sum(1 for row in file_read)
+    #     len_file_row = len(file_read)
+    #     mainpage.mt.table_box.setColumnCount(len_file_column)
+    #     mainpage.mt.table_box.setRowCount(len_file_row)
+    #     for n, key in enumerate(dict_file_read.keys()):
+    #         for m, item in enumerate(dict_file_read[key]):
+    #             if type(item) == float:
+    #                 x = '{:.3f}'.format(item)
+    #                 newitem = QTableWidgetItem(x)
+    #             elif "DATE" in key.upper():
+    #                 if type(item) == str:
+    #                     a = datetime.strptime(item,'%d/%m/%Y')
+    #                 else:
+    #                     b = item.strftime('%d/%m/%Y')
+    #                     a = datetime.strptime(b,'%d/%m/%Y')
+    #                 y = pd.to_datetime(a)
+    #                 o = y.strftime('%d/%m/%Y')
+    #                 u = datetime.strptime(o,'%d/%m/%Y').date()
+    #                 x =  format(u)                   
+    #                 newitem = QTableWidgetItem(x)
+    #             else:
+    #                 newitem = QTableWidgetItem(format(item))
+    #             mainpage.mt.table_box.setItem(m, n, newitem)
+    #     mainpage.mt.table_box.setHorizontalHeaderLabels(col_name)        
+    #     mainpage.mt.table_box.show()
     
     @classmethod
     def meta_file(self,pathfile,code_md5):
@@ -345,9 +394,10 @@ class TableView(QWindow):
             else:
                     frame_merge = self.check_mark(file_read,list_dim,list_meas,list_mark,list_filter)
             
-            frame_data = self.filter_add(frame_merge)
+            frame_data_add = self.filter_add(frame_merge)
+            frame_data = self.filtermeasure_add(frame_data_add)
             # print("frame_merge",frame_merge)
-            # print("frame_data",frame_data)
+            print("frame_data",frame_data)
             head_col = list(frame_data.head(0))
             len_file_column = len(head_col)
             len_file_row = len(frame_data)
@@ -396,20 +446,58 @@ class TableView(QWindow):
                     if fil_name in filter_key:
                         filter_list = read_data[code_md5]["filter"][fil_name]
                         if len(fil_split) > 1:
-                            frame_merge = frame_merge.loc[frame_merge[fil_split[1]].isin(filter_list)]
+                            frame_merge = frame_merge.loc[frame_merge[drill_split[0]].isin(filter_list)]
                         else:
-                            if "DATE" in fil_split[0].upper() and fil_split[0] in list_dim:
-                                new_key = 'Year'+"."+fil_split[0]
-                            elif fil_split[0] in list_meas:
-                                new_key = 'SUM'+"."+fil_split[0]
-                            else:
-                                new_key = fil_split[0]
-                            frame_merge = frame_merge.loc[frame_merge[new_key].isin(filter_list)]          
+                            # if "DATE" in drill_split[0].upper() and fil_split[0] in list_dim:
+                            #     new_key = 'Year'+"."+fil_split[0]
+                            # elif fil_split[0] in list_meas:
+                            #     new_key = 'SUM'+"."+fil_split[0]
+                            # else:
+                            #     new_key = fil_split[0]
+                            frame_merge = frame_merge.loc[frame_merge[drill_split[0]].isin(filter_list)]          
                 new_frame = frame_merge                 
             else:
                 new_frame = frame_merge
-
         return new_frame
+    
+    @classmethod
+    def filtermeasure_add(self,frame_merge):
+        select_topic = []
+        data = mainpage.mt.data_box.selectedItems()
+        row_list,column_list = self.row_column_list()
+        list_dim,list_meas,list_mark,list_filter = self.dim_meas_rc(row_list,column_list
+        )
+        for i in range(len(data)):
+            select_topic.append(str(mainpage.mt.data_box.selectedItems()[i].text()))
+
+        row_list,column_list = self.row_column_list()
+        all_list = row_list+column_list
+        with open('filtermeasure.json', 'r') as file_readjson:
+            read_json = file_readjson.read()
+            read_data = json.loads(read_json)
+
+        name_col = list(frame_merge.keys())
+        for path in select_topic:
+            md5_hash = hashlib.md5()
+            file_md5 = open(path, "rb")
+            file_md5_read = file_md5.read()
+            md5_hash.update(file_md5_read)
+            code_md5 = md5_hash.hexdigest()
+            if "filter" in list(read_data[code_md5].keys()):
+                filter_key = list(read_data[code_md5]["filter"].keys())
+                for fil_name in name_col:
+                    drill_split = fil_name.split("+")
+                    fil_split = drill_split[0].split(".")
+                    if fil_name in filter_key:
+                        print("fil_name",fil_name)
+                        filter_list = read_data[code_md5]["filter"][fil_name]
+                        print("filter_list",filter_list)
+                        frame_merge = frame_merge.loc[(frame_merge[fil_name] >= float(filter_list[0])) & (frame_merge[fil_name] <= float(filter_list[1]))]
+                new_frame = frame_merge                 
+            else:
+                new_frame = frame_merge
+        return new_frame
+
 
     @classmethod
     def show_dim_meas(self,file_read,list_dim,list_meas,list_filter):
@@ -422,11 +510,6 @@ class TableView(QWindow):
             dim_fil = list_filter[s_fil]
             if "DATE" in dim_name.upper():
                 data_date = [datetime.strptime(date, "%d/%m/%Y").date() if type(date) == str else datetime.date(date)  for date in file_read[dim_name]]
-                # file_read[dim_name] = data_date
-                # if  upper_filter == 'NONE': 
-                #     fil_date = list(pd.DatetimeIndex(data_date).year)
-                #     dict_add[dim_name] = fil_date
-                # else:
                 if  upper_filter == 'YEAR' or upper_filter == 'NONE':
                     fil_date = list(pd.DatetimeIndex(data_date).year)
                     dim_fil = 'Year'
@@ -638,8 +721,8 @@ class TableView(QWindow):
         data_infil = []
         drill_select = col_select.split("+")
         split_select = drill_select[0].split(".")
-
-        if "DATE" not in split_select[0].upper():
+   
+        if "DATE" not in drill_select[0].upper():
             data_list = file_read[split_select[0]]
             for set_data in data_list:
                 if set_data not in data_infil:
@@ -743,6 +826,7 @@ class TableView(QWindow):
     @classmethod
     def filter_boxadd(self):
         read_data,select_topic = self.list_checkpath_filter()
+        read_datameas,select_topicmeas = self.path_filtermeas()
         mainpage.mt.fil_box.clear() 
         for path in select_topic:
             md5_hash = hashlib.md5()
@@ -751,10 +835,15 @@ class TableView(QWindow):
             md5_hash.update(file_md5_read)
             code_md5 = md5_hash.hexdigest()
             if "filter" in list(read_data[code_md5].keys()): 
-                list_filname = list(read_data[code_md5]["filter"].keys())
-                for fil_name in range(len(list_filname)):               
-                    toppic_ml = QListWidgetItem(list_filname[fil_name])
+                list_filname = list(read_data[code_md5]["filter"].keys())                
+            if "filter" in list(read_datameas[code_md5].keys()): 
+                list_filnamemeas = list(read_datameas[code_md5]["filter"].keys())
+            list_all = list_filname + list_filnamemeas
+            if len(list_all) > 0:
+                for fil_name in range(len(list_all)):               
+                    toppic_ml = QListWidgetItem(list_all[fil_name])
                     mainpage.mt.fil_box.insertItem(fil_name, toppic_ml)
+                
     
     @classmethod
     def save_dim_meas(self):

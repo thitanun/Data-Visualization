@@ -13,12 +13,33 @@ import altair as alt
 class GraphView(QWidget):
     @classmethod
     def fill_data(self):
+        print('starting graph...')
         data_file = mainpage.mt.data_box.selectedItems()
         file_read = tableManage.TableView.read_data(data_file)
+        dimension,measure = tableManage.TableView.dim_meas_list()
         self.row_list,self.column_list = tableManage.TableView.row_column_list()
         self.list_dim,self.list_meas,self.list_mark,self.list_filter = tableManage.TableView.dim_meas_rc(self.row_list,self.column_list)
-        # print('dim',self.list_dim)
-        # print('fil',self.list_filter)
+
+        if len(self.list_mark) == 0 and len(self.list_meas) == 0:
+            frame_merge = tableManage.TableView.show_dim_meas(file_read,self.list_dim,self.list_meas,self.list_filter)
+        else:
+            frame_merge = tableManage.TableView.check_mark(file_read,self.list_dim,self.list_meas,self.list_mark,self.list_filter)
+        
+        frame_data_fil = tableManage.TableView.filter_add(frame_merge)
+        self.frame_data = tableManage.TableView.filtermeasure_add(frame_data_fil)
+
+        new_dict_frame_data = {}
+        for key,value in self.frame_data.items():
+            split_key = key.split(".")
+            if len(split_key) > 1:
+                new_key = key.replace(".", " ")
+                print("new_key")
+                new_dict_frame_data[new_key] = value
+            else:
+                new_dict_frame_data[key] = value
+
+        self.frame_graph = pd.DataFrame(new_dict_frame_data)
+        print("frame_graph",self.frame_graph)
 
         if len(self.list_dim) == 0:
             return
@@ -28,33 +49,21 @@ class GraphView(QWidget):
             self.alt_row = [alt.Y, alt.Row, alt.Color]
         else:
             if self.list_dim[0] in self.column_list:
-                # print(self.list_dim[0])
                 self.alt_col = [alt.Column, alt.X, alt.Color]
                 self.alt_row = [alt.Y, alt.Row, alt.Color]
+                # self.alt_col = [alt.X, alt.Column, alt.Color]
+                # self.alt_row = [alt.Row, alt.Y, alt.Color]
             else:
                 self.alt_col = [alt.X, alt.Column, alt.Color]
                 self.alt_row = [alt.Row, alt.Y, alt.Color]
-
-        if len(self.list_mark) == 0:
-            if len(self.list_meas) == 0:
-                frame_merge = tableManage.TableView.show_dim_meas(file_read,self.list_dim,self.list_meas,self.list_filter)
-        else:
-                frame_merge = tableManage.TableView.check_mark(file_read,self.list_dim,self.list_meas,self.list_mark,self.list_filter)
-            
-        self.frame_data = tableManage.TableView.filter_add(frame_merge)
-
-        self.head_frame = list(self.frame_data.head(0))
-        # print('head', self.head_frame)
-        # print('fm', self.frame_data)
+                # self.alt_col = [alt.Column, alt.X, alt.Color]
+                # self.alt_row = [alt.Y, alt.Row, alt.Color]
 
         self.check_type()
 
     @classmethod
     def check_type(self):
-        if mainpage.mt.gr_combo.currentText() == 'NONE':
-            print("You didn't choose any type")
-
-        elif mainpage.mt.gr_combo.currentText() == 'BAR chart':
+        if mainpage.mt.gr_combo.currentText() == 'BAR chart':
             self.plot_bar()
 
         elif mainpage.mt.gr_combo.currentText() == 'PIE chart':
@@ -65,24 +74,67 @@ class GraphView(QWidget):
 
     @classmethod
     def plot_bar(self):
+        print('staring plot bar graph')
         alt_plot = []
         show_tooltip = []
         PLOT = []
-        for dim in self.list_dim:
+
+        head = list(self.frame_graph.head(0))
+        print('head file', head)
+
+        list_meas_data = ['SUM', 'MIN', 'MAX' , 'MEAN' , 'MEDIAN' , 'COUNT']
+        list_meas_new = []
+        list_dim_data = ['Year', 'Month', 'Date']
+        list_dim_new = []
+
+        for i in range(len(head)):
+            new_head_meas = head[i].split(' ')
+            # print('new head meas', new_head_meas)
+            if new_head_meas[0] in list_meas_data:
+                list_meas_new.append(head[i])
+                print('list_meas_new', list_meas_new)
+            else:
+                list_dim_new.append(head[i])
+                print('dim new', list_dim_new)
+
+
+        for j in range(len(self.column_list)):
+            new_col_dim = self.column_list[j].split('+')
+        
+        for k in range(len(self.row_list)):
+            new_row_dim = self.row_list[k].split('+')
+        print('row dim', new_row_dim[0])
+
+        for dim in list_dim_new:
+            print('dim', dim)
+            dim_ymd = dim.split(' ')
+            print('dim ymd', dim_ymd)
             if dim in self.column_list:
                 alt_plot.append(self.alt_col[0](f"{dim}"))
                 self.alt_col.pop(0)
+            elif dim == new_col_dim[0]:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+            elif dim_ymd[0] in list_dim_data:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+            elif dim == new_row_dim[0]:
+                # print('here')
+                alt_plot.append(self.alt_row[0](f"{dim}"))
+                self.alt_row.pop(0)
             else:
                 alt_plot.append(self.alt_row[0](f"{dim}"))
                 self.alt_row.pop(0)
             show_tooltip.append(dim)
-        for meas in self.list_meas:
+
+
+        for meas in list_meas_new:
             min_bar = 0
             max_bar = 0
-            if min_bar > self.frame_data[meas].min():
-                min_bar = self.frame_data[meas].min()
-            if max_bar < self.frame_data[meas].max():
-                max_bar = self.frame_data[meas].max()
+            if min_bar > self.frame_graph[meas].min():
+                min_bar = self.frame_graph[meas].min()
+            if max_bar < self.frame_graph[meas].max():
+                max_bar = self.frame_graph[meas].max()
 
             plt = alt_plot.copy()
             if meas in self.column_list:
@@ -92,36 +144,74 @@ class GraphView(QWidget):
 
             plt.append(alt.Tooltip(show_tooltip + [meas]))
 
-            chart = (alt.Chart(self.frame_data).mark_bar().encode(*plt,)
+            chart = (alt.Chart(self.frame_graph).mark_bar().encode(
+                    *plt,
+                    )
                     .resolve_scale(x="independent",y="independent")
                     .interactive()
                     .transform_filter(alt.FieldGTPredicate(field=str(meas),gt=-1e10))
                 )
             PLOT.append(chart)
 
-        if len(self.list_meas) > 0:
-            if self.list_meas[0] in self.column_list:
+        # new_data_list = []
+        for a in range(len(self.column_list)):
+            new_a_col = self.column_list[a].split(' ')
+            # print('test new', new_a_col)
+            if new_a_col[0] in list_meas_data:
+                new_data_meas = self.column_list
+                # print('new data meas', new_data_meas)
+            else:
+                new_data_meas = 'SUM' + ' ' + self.column_list[a]
+                # print('test new data', new_data_meas)
+        # new_data_list.append(new_data_meas)
+        # print('fin new data', new_data_list)
+
+        # print('list_meas_new', list_meas_new[0])
+        if len(list_meas_new) > 0:
+            if list_meas_new[0] == new_data_meas:
+                print('here')
                 chart = alt.hconcat(*PLOT)
             else:
                 chart = alt.vconcat(*PLOT)
-            mainpage.mt.show_chart.updateChart(chart) # plot chart
+            mainpage.mt.show_chart.updateChart(chart) #plot chart
+
 
     @classmethod
     def plot_pie(self):
+        print('staring plot pie graph')
         CHART = []
-        for dim in self.list_dim:
+
+        head = list(self.frame_graph.head(0))
+        print('head file', head)
+
+        list_meas_data = ['SUM', 'MIN', 'MAX' , 'MEAN' , 'MEDIAN' , 'COUNT']
+        list_meas_new = []
+        list_dim_new = []
+
+        for i in range(len(head)):
+            new_head_meas = head[i].split(' ')
+            if new_head_meas[0] in list_meas_data:
+                list_meas_new.append(head[i])
+            else:
+                list_dim_new.append(head[i])
+                print('dim new', list_dim_new)
+
+
+        for dim in list_dim_new:
             sub_chart = []
-            BASE = alt.Chart(self.frame_data).mark_arc().encode(color=alt.Color(dim))
-            for meas in self.list_meas:
+            BASE = alt.Chart(self.frame_graph).mark_arc().encode(color=alt.Color(dim))
+            for meas in list_meas_new:
                 base = BASE.encode(
                     theta = alt.Theta(meas),
-                    show_tooltip = alt.Tooltip([dim,meas])
+                    tooltip = alt.Tooltip([dim,meas])
                 )
                 sub_chart.append(base)
             CHART.append(sub_chart)
 
-        if len(self.list_meas) > 0:
-            if self.list_meas[0] in self.column_list:
+        print('dim new col check', list_dim_new)
+        if len(list_dim_new) > 0:
+            if list_dim_new[0] in self.column_list:
+                # print('here')
                 hchart = []
                 for sub_chart in CHART:
                     hchart.append(alt.hconcat(*sub_chart).resolve_scale(theta="independent",color="independent"))
@@ -131,40 +221,83 @@ class GraphView(QWidget):
                 for sub_chart in CHART:
                     vchart.append(alt.vconcat(*sub_chart).resolve_scale(theta="independent",color="independent"))
                 chart = alt.hconcat(*vchart)
-            mainpage.mt.show_chart.updateChart(chart) # plot chart
+            mainpage.mt.show_chart.updateChart(chart) #plot chart
+
 
     @classmethod
     def plot_line(self):
+        print('staring plot line graph')
         alt_plot = []
         show_tooltip = []
         PLOT = []
-        for dim in self.list_dim:
+
+        head = list(self.frame_graph.head(0))
+        print('head file', head)
+
+        list_meas_data = ['SUM', 'MIN', 'MAX' , 'MEAN' , 'MEDIAN' , 'COUNT']
+        list_meas_new = []
+        list_dim_data = ['Year', 'Month', 'Date']
+        list_dim_new = []
+
+        for i in range(len(head)):
+            new_head_meas = head[i].split(' ')
+            # print('new head meas', new_head_meas)
+            if new_head_meas[0] in list_meas_data:
+                list_meas_new.append(head[i])
+                # print('list_meas_new', list_meas_new)
+            else:
+                list_dim_new.append(head[i])
+                # print('dim new', list_dim_new)
+
+
+        for j in range(len(self.column_list)):
+            new_col_dim = self.column_list[j].split('+')
+        
+        for k in range(len(self.row_list)):
+            new_row_dim = self.row_list[k].split('+')
+        print('row dim', new_row_dim[0])
+
+        for dim in list_dim_new:
+            print('dim', dim)
+            dim_ymd = dim.split(' ')
+            print('dim ymd', dim_ymd)
             if dim in self.column_list:
                 alt_plot.append(self.alt_col[0](f"{dim}"))
                 self.alt_col.pop(0)
-                # print(alt_col)
+            elif dim == new_col_dim[0]:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+            elif dim_ymd[0] in list_dim_data:
+                alt_plot.append(self.alt_col[0](f"{dim}"))
+                self.alt_col.pop(0)
+            elif dim == new_row_dim[0]:
+                alt_plot.append(self.alt_row[0](f"{dim}"))
+                self.alt_row.pop(0)
             else:
                 alt_plot.append(self.alt_row[0](f"{dim}"))
                 self.alt_row.pop(0)
             show_tooltip.append(dim)
-        for meas in self.list_meas:
-            # data = frame_data
+
+
+        for meas in list_meas_new:
+            print('plot bar start')
             min_bar = 0
             max_bar = 0
-            if min_bar > self.frame_data[meas].min(): 
-                min_bar = self.frame_data[meas].min()
-            if max_bar < self.frame_data[meas].max():
-                max_bar = self.frame_data[meas].max()
+            if min_bar > self.frame_graph[meas].min():
+                min_bar = self.frame_graph[meas].min()
+            if max_bar < self.frame_graph[meas].max():
+                max_bar = self.frame_graph[meas].max()
 
             plt = alt_plot.copy()
-            # print('heyy',plt)
             if meas in self.column_list:
                 plt.append(self.alt_col[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
             else:
                 plt.append(self.alt_row[0](meas,scale=alt.Scale(domain=(min_bar, max_bar), clamp=True)))
 
             plt.append(alt.Tooltip(show_tooltip + [meas]))
-        chart = (alt.Chart(self.frame_data).mark_line().encode(*plt)
+        chart = (alt.Chart(self.frame_graph).mark_line().encode(
+                    *plt,
+                    )
                     .resolve_scale(x="independent",y="independent")
                     .interactive()
                 ) 
@@ -175,7 +308,4 @@ class GraphView(QWidget):
                 chart = alt.hconcat(*PLOT)
             else:
                 chart = alt.vconcat(*PLOT)
-            mainpage.mt.show_chart.updateChart(chart) # plot chart
-
-
-
+            mainpage.mt.show_chart.updateChart(chart) #plot chart
