@@ -59,21 +59,25 @@ class Ui_FilterMark(object):
 
 
     def fin_mark(self):
-        data_file = mainpage.mt.data_box.selectedItems()
-        file_read = tableManage.TableView.read_data(data_file)
+        select_topic = []
+        data = mainpage.mt.data_box.selectedItems()
+        for i in range(len(data)):
+            select_topic.append(str(mainpage.mt.data_box.selectedItems()[i].text()))
+        file_read = tableManage.TableView.read_data(select_topic)
         row_list,column_list = tableManage.TableView.row_column_list()
         # print('row list', row_list)
         # print('col_list', column_list)
 
         list_dim,list_meas,self.list_mark,list_filter = tableManage.TableView.dim_meas_rc(row_list,column_list)
-        print(list_dim,list_meas,self.list_mark,list_filter)
+
 
         if len(self.list_mark) == 0 and len(list_meas) == 0:
-                frame_merge = tableManage.TableView.show_dim_meas(file_read,list_dim,list_meas,list_filter)
+            frame_merge = tableManage.TableView.show_dim_meas(file_read,list_dim,list_meas,list_filter)
         else:
-                frame_merge = tableManage.TableView.check_mark(file_read,list_dim,list_meas,self.list_mark,list_filter)
+            new_file_read,list_dimfil = tableManage.TableView.check_date_filter(file_read,list_dim,list_filter)
+            frame_merge = tableManage.TableView.check_mark(new_file_read,list_dimfil,list_meas,self.list_mark)
             
-        frame_data = tableManage.TableView.filter_add(frame_merge)
+        frame_data = tableManage.TableView.filter_add(frame_merge,row_list,column_list,select_topic)
         # print('frame', frame_data)
         return frame_data
 
